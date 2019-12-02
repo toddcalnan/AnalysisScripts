@@ -1,3 +1,8 @@
+% Remove saccades that are made purely out of NaNs in the gaze media column
+% Input is a cell array of saccade clusters 
+% Output is a celll array of saccade clusters with the clusters made purely
+% of NaNs removed
+
 function [nonNaNSaccades] = removeNaNSaccades(saccadeClusters)
 
 nonNaNSaccades = cell(1,1); % Preallocating

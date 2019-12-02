@@ -1,7 +1,12 @@
+% Calculate the velocity of each saccade cluster
+% Input is a cell array of saccade clusters and the sampling rate, almost
+% always 120
+% Output is the velocity of the saccade cluster
+
 function [velocity] = calculateSaccadeVelocity(saccadeClusters, sampleRate)
 
 % Preallocate
-[xStart, yStart, xEnd, yEnd, saccadeSize] = deal(zeros(size(saccadeClusters))); 
+[xStart, yStart, xEnd, yEnd, saccadeSize] = deal(zeros(size(saccadeClusters))); % preallocating
 
 for index = 1:size(saccadeClusters,2)
     % Remove the NaNs from the start of the saccade

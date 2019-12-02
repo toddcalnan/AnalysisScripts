@@ -1,36 +1,43 @@
+% Calculate the average look duration of each eye tracking subject
+% Input: the path should contain each subject's analysis folder containing
+% the EGT_Analysis mat file. 
+% Output: an Excel file containing the average look duration for each
+% subject, for each condition
+
 close all
 clear
 thePath = 'C:\Users\tmc54\Documents\EyeTracking\DukeACT_EGT\T1Background';
 cd(thePath)
 mainFolder = dir;
 listOfSubjectFolders = {mainFolder(3:end).name}; %3:end means that it will start with the first subject and end with the last
-sampleRate = 120; 
+sampleRate = 120; % sampling rate of the Tobii system
 toleranceThreshold = 24; % how many samples we allow before calling something a distraction
 setting = 'all'; % 'social', 'nonSocial', 'all' are the options
-[totalAttentionMatrixSeconds, totalAttentionMatrix, endDistraction]  = deal(zeros(size(listOfSubjectFolders,2), 1)); % preallocating
+[totalAttentionMatrixSeconds, totalAttentionMatrix, endDistraction]...
+    = deal(zeros(size(listOfSubjectFolders,2), 1)); % preallocating
 
 %% 
 disengageArray = cell(size(listOfSubjectFolders,1),1); % preallocating
 for subjectNumber = 1:180 % go through the subjects
     cd(thePath);
-    varname = listOfSubjectFolders{subjectNumber};
-    cd(varname);
+    subjectName = listOfSubjectFolders{subjectNumber};
+    cd(subjectName);
     contents = dir;
-    contents = {contents(3:end).name};
-    if ~isempty(contents)
-        fileName = [varname '_EGT_Analysis.mat'];
-        datName = ['dat_' varname];
-        if exist(fileName, 'file')
-            fileName = load(fileName, datName); 
-            listOfSegmentNames = fieldnames(fileName.(datName)); 
-            gazeMediaStorageArray = cell(1,21);
-            for segmentNumber = 1:21 % all segments
+    contents = {contents(3:end).name}; % look at the contents of the subject's folder
+    if ~isempty(contents) % if the subject's folder isn't empty
+        fileName = [subjectName '_EGT_Analysis.mat']; % name of the subject's analyzed mat file
+        datName = ['dat_' subjectName]; % we just need the 'dat' variable
+        if exist(fileName, 'file') % if the analysis mat file exists
+            fileName = load(fileName, datName);  % load the dat variable from the subject's analyzed mat file
+            listOfSegmentNames = fieldnames(fileName.(datName)); % a list of all the fields in the analyzed mat file; we expect 21 fields, 1 per segment
+            gazeMediaStorageArray = cell(1,size(listOfSegmentNames,2)); % preallocating
+            for segmentNumber = 1:size(listOfSegmentNames,2) % go through all segments
                 condition = listOfSegmentNames{segmentNumber};
-                dat = fileName.(['dat_' varname]).(condition); 
-                gazeMedia = dat.gazeonmedia;
-                gazeMediaStorageArray{segmentNumber} = gazeMedia;
+                conditionData = fileName.(['dat_' subjectName]).(condition); % pull out the data for the condition we are looking at
+                gazeMedia = conditionData.gazeonmedia; % pull out the gaze media field for the current condition
+                gazeMediaStorageArray{segmentNumber} = gazeMedia; % save gaze media data to the storage array
             end
-            if strcmp(setting, 'all')
+            if strcmp(setting, 'all') % look at all conditions
                 chronologicalGazeMedia = vertcat(gazeMediaStorageArray{1}, gazeMediaStorageArray{16}, gazeMediaStorageArray{2}, gazeMediaStorageArray{13}, gazeMediaStorageArray{3}, gazeMediaStorageArray{14}, gazeMediaStorageArray{4}, gazeMediaStorageArray{12}, gazeMediaStorageArray{5}, gazeMediaStorageArray{15}, gazeMediaStorageArray{6}, gazeMediaStorageArray{17}, gazeMediaStorageArray{7}, gazeMediaStorageArray{18}, gazeMediaStorageArray{8}, gazeMediaStorageArray{21}, gazeMediaStorageArray{9}, gazeMediaStorageArray{20}, gazeMediaStorageArray{10}, gazeMediaStorageArray{19}, gazeMediaStorageArray{11});
             elseif strcmp(setting, 'social')
                 chronologicalGazeMedia = vertcat(gazeMediaStorageArray{13}, gazeMediaStorageArray{3}, gazeMediaStorageArray{14}, gazeMediaStorageArray{4}, gazeMediaStorageArray{12}, gazeMediaStorageArray{5}, gazeMediaStorageArray{15});
@@ -40,7 +47,7 @@ for subjectNumber = 1:180 % go through the subjects
                 chronologicalGazeMedia = chronologicalGazeMedia(1:4920, :); % shortening to 41 seconds
             end
             
-            noNANs = find(~isnan(chronologicalGazeMedia(:,1)));
+            noNANs = find(~isnan(chronologicalGazeMedia(:,1))); % make a vector of where the gaze media is not a NaN, meaning Tobii had a lock on the eyes
 
             %% Find disengagement areas
             disengage = zeros(size(noNANs,1),1); % preallocating
@@ -60,14 +67,14 @@ for subjectNumber = 1:180 % go through the subjects
             
 
             %% Calculate total attention, including the NANs within the tolerance threshold
-            if size(disengage,2) > 0
-                if endDistraction(subjectNumber) == 0
+            if size(disengage,2) > 0 % If there is a disengagement point
+                if endDistraction(subjectNumber) == 0 % If we don't end with a distraction
                    disengage(size(disengage,1)+1,1) = size(chronologicalGazeMedia,1); % add in a distraction at the end of the block to use in calculating total amount of attention
                 end
-                disengageArray{subjectNumber,1} = size(disengage,1); 
+                disengageArray{subjectNumber,1} = size(disengage,1); % how many disengagement points there are for each subject
                 [start, finish] = deal(zeros(size(disengage))); % preallocating
-                start(1) = noNANs(1);
-                finish(1) = disengage(1);
+                start(1) = noNANs(1); 
+                finish(1) = disengage(1); 
                 for a = 2:size(disengage,1)
                     start(a) = noNANs(find(noNANs>disengage(a-1), 1 )); % find the first non-NAN after they disengage
                     finish(a) = disengage(a);
