@@ -14,7 +14,7 @@ socialSegmentOrder = ['DB1', 'DB2', 'DB3', 'DB4', 'DB5', 'DB6', 'DB7', 'DB8', 'D
 toleranceThreshold = 24 # number of samples allowed before we call it a distraction
 
 ## Set up the path
-path = 'C:/Users/tmc54/Documents/EyeTracking/DukeACT/T2Background'
+path = 'C:/Users/tmc54/Documents/EyeTracking/DukeACT/T1Background'
 os.chdir(path)
 
 ## Go through all subjects
@@ -35,4 +35,22 @@ for subjectNumber in range(0,1):
         chronologicalGazeOnMedia = [gazeOnMedia[m][:,0] for m in chronologicalSegmentOrder] # [:,0] is so we just pull out the first column of gazeonmedia
         noNanLocations = [np.argwhere(~np.isnan(chronologicalGazeOnMedia[m])) for m in range(0,len(chronologicalGazeOnMedia))] # find where there are gaze points in each segment, so we can see where the subject looks away
         ## Find nonconsecutive values in noNanLocations, so we can find the disengage points
-        
+        disengageList = []
+        for n in noNanLocations: 
+            diff = n[1:]-n[:-1] # calculate the difference between each row and the row after it
+            disengagePoints = np.where(diff >= toleranceThreshold) # find where the difference between rows is greater than or equal to the tolerance threshold
+            disengageList.append(disengagePoints[0]) # make a list of where the disengagement points happen for each segment
+            
+        for segmentDisengages in disengageList:
+            if len(segmentDisengages) > 0:
+                segmentDisengages = np.insert(segmentDisengages,0,0)
+                start = []
+                finish = []
+                start.append(disengagePoints[0])
+                finish.append(disengagePoints[1])
+                for disengagePoint in range(1,len(segmentDisengages)):
+                    start.append(disengagePoint)
+                    finish.append(disengagePoint)
+                    
+            
+            
